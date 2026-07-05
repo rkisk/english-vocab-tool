@@ -783,6 +783,10 @@ function loadStock() {
   }
 }
 
+function newId() {
+  return 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+}
+
 function saveStock() {
   try {
     localStorage.setItem(STOCK_KEY, JSON.stringify(extractedCards));
