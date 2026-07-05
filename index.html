@@ -663,7 +663,10 @@
           </div>
           <div class="field">
             <label>Bin ID</label>
-            <input type="text" id="cloudBinId" placeholder="まだ無ければ右のボタンで作成" oninput="saveCloudConfig()">
+            <div style="display:flex; gap:6px;">
+              <input type="text" id="cloudBinId" placeholder="まだ無ければ右のボタンで作成" oninput="saveCloudConfig()" style="flex:1;">
+              <button class="btn-sm" onclick="copyBinId()" title="Bin IDをコピー">📋</button>
+            </div>
           </div>
         </div>
         <div style="display:flex; gap:8px; margin-top:8px;">
@@ -801,6 +804,14 @@ function saveStock() {
 // ---- Cloud sync (JSONBin.io) for cross-device stock sharing ----
 const CLOUD_KEY_STORAGE = 'cloud_jsonbin_key';
 const CLOUD_BIN_STORAGE = 'cloud_jsonbin_id';
+
+function copyBinId() {
+  const binId = document.getElementById('cloudBinId').value.trim();
+  if (!binId) { showToast('Bin IDが空です。先に「新規Binを作成」してください', 'error'); return; }
+  navigator.clipboard.writeText(binId)
+    .then(() => showToast('Bin IDをコピーしました。もう一方の端末に貼り付けてください', 'success'))
+    .catch(() => showToast('コピーに失敗しました。手動で選択してコピーしてください', 'error'));
+}
 
 function toggleCloudConfig() {
   document.getElementById('cloudConfig').classList.toggle('open');
