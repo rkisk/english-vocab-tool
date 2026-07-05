@@ -873,11 +873,11 @@ async function createCloudBin() {
   }
 }
 
-async function pullFromCloud(silent) {
+async function pullFromCloud(silentSuccess, silentErrorToo) {
   const key = localStorage.getItem(CLOUD_KEY_STORAGE);
   const binId = localStorage.getItem(CLOUD_BIN_STORAGE);
   if (!key || !binId) {
-    if (!silent) showToast('クラウド同期が設定されていません', 'error');
+    if (!silentSuccess) showToast('クラウド同期が設定されていません', 'error');
     return false;
   }
   try {
@@ -885,7 +885,7 @@ async function pullFromCloud(silent) {
       headers: { 'X-Master-Key': key }
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+    if (!res.ok) throw new Error(data.message || `HTTP ${res.status} — Bin IDが正しいか確認してください`);
 
     const remoteItems = (data.record && data.record.items) || [];
 
@@ -898,11 +898,9 @@ async function pullFromCloud(silent) {
     extractedCards = merged;
     localStorage.setItem(STOCK_KEY, JSON.stringify(extractedCards));
 
-    if (extractedCards.length) {
-      document.getElementById('resultsSection').style.display = '';
-      renderCards(extractedCards);
-      renderPreview(extractedCards[extractedCards.length - 1]);
-    }
+    document.getElementById('resultsSection').style.display = '';
+    renderCards(extractedCards);
+    if (extractedCards.length) renderPreview(extractedCards[extractedCards.length - 1]);
 
     // If we found local-only cards not yet on the cloud, push the merged result
     // back up so they aren't lost on the next device's pull either.
@@ -910,11 +908,11 @@ async function pullFromCloud(silent) {
       pushToCloud(false);
     }
 
-    if (!silent) showToast(`クラウドから${extractedCards.length}件を取得しました`, 'success');
+    if (!silentSuccess) showToast(`クラウドから${extractedCards.length}件を取得しました`, 'success');
     return true;
   } catch (e) {
     console.error(e);
-    if (!silent) showToast('クラウド取得エラー：' + e.message, 'error');
+    if (!silentSuccess || !silentErrorToo) showToast('クラウド取得エラー：' + e.message, 'error');
     return false;
   }
 }
@@ -1640,7 +1638,7 @@ if (extractedCards.length) {
   indicator.style.color = 'var(--text-muted)';
   toDisable.forEach(el => el.disabled = true);
 
-  await pullFromCloud(true);
+  await pullFromCloud(true, false); // silent success, but still surface errors
 
   indicator.textContent = '☁ 同期オン';
   indicator.style.color = 'var(--green)';
