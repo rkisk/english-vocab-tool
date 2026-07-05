@@ -708,9 +708,9 @@
         <span class="count" id="resultCount"></span>
         <button class="btn-outline notion" onclick="saveAllToNotion()">📎 Notionに全て保存</button>
         <button class="btn-outline anki" onclick="exportCSV()">⬇ Anki CSV出力</button>
-        <label class="btn-outline" style="cursor:pointer; display:inline-flex; align-items:center;">
+        <label class="btn-outline" id="csvImportLabel" style="cursor:pointer; display:inline-flex; align-items:center;">
           ⬆ CSV読み込み
-          <input type="file" accept=".csv,text/csv" onchange="importCSV(event)" style="display:none;">
+          <input type="file" id="csvImportInput" accept=".csv,text/csv" onchange="importCSV(event)" style="display:none;">
         </label>
         <button class="btn-outline" onclick="clearStock()" style="color:var(--red); border-color:var(--border);">🗑 ストックをクリア</button>
       </div>
@@ -884,14 +884,28 @@ async function pullFromCloud(silent) {
     if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
 
     const remoteItems = (data.record && data.record.items) || [];
-    extractedCards = remoteItems;
-    localStorage.setItem(STOCK_KEY, JSON.stringify(extractedCards)); // local cache only, no re-push
+
+    // Merge instead of overwrite: keep any local-only cards (e.g. added/imported
+    // just before this pull resolved) rather than discarding them.
+    const remoteIds = new Set(remoteItems.map(c => c.id));
+    const localOnly = extractedCards.filter(c => !remoteIds.has(c.id));
+    const merged = [...remoteItems, ...localOnly].sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+
+    extractedCards = merged;
+    localStorage.setItem(STOCK_KEY, JSON.stringify(extractedCards));
 
     if (extractedCards.length) {
       document.getElementById('resultsSection').style.display = '';
       renderCards(extractedCards);
       renderPreview(extractedCards[extractedCards.length - 1]);
     }
+
+    // If we found local-only cards not yet on the cloud, push the merged result
+    // back up so they aren't lost on the next device's pull either.
+    if (localOnly.length) {
+      pushToCloud(false);
+    }
+
     if (!silent) showToast(`クラウドから${extractedCards.length}件を取得しました`, 'success');
     return true;
   } catch (e) {
@@ -1611,10 +1625,28 @@ if (extractedCards.length) {
   renderPreview(extractedCards[extractedCards.length - 1]);
 }
 
-// If cloud sync is configured, pull the latest shared stock on load (overwrites local cache)
-if (isCloudConfigured()) {
-  pullFromCloud(true);
-}
+// If cloud sync is configured, wait for the initial pull to finish before
+// allowing edits — otherwise an import/add done right after page load can
+// race with the pull and get discarded.
+(async function initCloudSync() {
+  if (!isCloudConfigured()) return;
+
+  const indicator = document.getElementById('cloudSyncIndicator');
+  const extractBtn = document.getElementById('extractBtn');
+  const manualAddBtn = document.querySelector('#manualTab .btn-primary');
+  const csvImportInput = document.getElementById('csvImportInput');
+  const toDisable = [extractBtn, manualAddBtn, csvImportInput].filter(Boolean);
+
+  indicator.textContent = '🔄 同期中…';
+  indicator.style.color = 'var(--text-muted)';
+  toDisable.forEach(el => el.disabled = true);
+
+  await pullFromCloud(true);
+
+  indicator.textContent = '☁ 同期オン';
+  indicator.style.color = 'var(--green)';
+  toDisable.forEach(el => el.disabled = false);
+})();
 </script>
 </body>
 </html>
