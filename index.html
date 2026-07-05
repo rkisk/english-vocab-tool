@@ -693,7 +693,7 @@
   </div>
 
   <!-- Results panel full width -->
-  <div class="panel results-panel" id="resultsSection" style="display:none;">
+  <div class="panel results-panel" id="resultsSection">
     <div class="panel-header">
       📚 抽出結果
       <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
@@ -1197,9 +1197,8 @@ function renderCards(cards) {
   const count = document.getElementById('resultCount');
 
   if (!cards.length) {
-    grid.innerHTML = '<div class="empty-state"><div class="big">🔍</div>抽出できる単語・フレーズが見つかりませんでした</div>';
-    count.textContent = '';
-    document.getElementById('previewPanel').innerHTML = '<div class="empty-state"><div class="big">🔍</div>結果なし</div>';
+    grid.innerHTML = '<div class="empty-state"><div class="big">📭</div>まだストックがありません<br>テキスト・画像・手動入力・CSVで追加してください</div>';
+    count.textContent = '累計 0件';
     return;
   }
 
@@ -1341,9 +1340,6 @@ function deleteCard(id) {
   extractedCards = extractedCards.filter(c => c.id !== id);
   saveStock();
   renderCards(extractedCards);
-  if (!extractedCards.length) {
-    document.getElementById('resultsSection').style.display = 'none';
-  }
   showToast('削除しました', 'success');
 }
 
@@ -1352,7 +1348,7 @@ function clearStock() {
   if (!confirm(`ストック${extractedCards.length}件を全て削除しますか？この操作は元に戻せません。`)) return;
   extractedCards = [];
   saveStock();
-  document.getElementById('resultsSection').style.display = 'none';
+  renderCards(extractedCards);
   document.getElementById('previewPanel').innerHTML = '<div class="empty-state"><div class="big">✦</div>テキストを入力して抽出すると<br>ここにプレビューが表示されます</div>';
   showToast('ストックをクリアしました', 'success');
 }
@@ -1619,9 +1615,8 @@ loadNotionConfig();
 loadCloudConfig();
 
 extractedCards = loadStock();
+renderCards(extractedCards);
 if (extractedCards.length) {
-  document.getElementById('resultsSection').style.display = '';
-  renderCards(extractedCards);
   renderPreview(extractedCards[extractedCards.length - 1]);
 }
 
