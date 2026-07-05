@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英語抽出ツール</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0e0e0f;
+    --surface: #181819;
+    --surface2: #222224;
+    --border: #2e2e31;
+    --accent: #7c6aff;
+    --accent-dim: rgba(124,106,255,0.12);
+    --text: #e8e8ea;
+    --text-muted: #7a7a82;
+    --text-dim: #4a4a52;
+    --green: #3ecf8e;
+    --green-dim: rgba(62,207,142,0.1);
+    --red: #f87171;
+    --yellow: #fbbf24;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo {
+    width: 28px; height: 28px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
+  header h1 {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  header span {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: 4px;
+  }
+
+  .main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 32px 32px;
+    gap: 24px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-body {
+    padding: 18px;
+  }
+
+  /* Input area */
+  .input-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+
+  .tab {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tab.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .tab:hover:not(.active) {
+    border-color: var(--text-dim);
+    color: var(--text);
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 180px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 14px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--text-dim); }
+
+  .image-drop {
+    width: 100%;
+    min-height: 180px;
+    background: var(--surface2);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-dim);
+    font-size: 13px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .image-drop:hover, .image-drop.dragover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    color: var(--text-muted);
+  }
+
+  .image-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+  .image-drop .icon { font-size: 28px; }
+
+  #imagePreview {
+    max-width: 100%;
+    max-height: 160px;
+    border-radius: 6px;
+    display: none;
+  }
+
+  /* Settings row */
+  .settings-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    letter-spacing: 0.04em;
+  }
+
+  .field input, .field select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    padding: 7px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field input::placeholder { color: var(--text-dim); }
+  .field select option { background: var(--surface2); }
+
+  .extract-level {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .toggle-chip {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .toggle-chip.on {
+    background: var(--green-dim);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 11px;
+    border-radius: 8px;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 14px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Results */
+  .results-panel {
+    grid-column: 1 / -1;
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+
+  .card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    position: relative;
+    transition: border-color 0.15s;
+  }
+
+  .card:hover { border-color: var(--text-dim); }
+
+  .card-type {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .card-type.word { color: var(--accent); }
+  .card-type.phrase { color: var(--yellow); }
+
+  .card-front {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+
+  .card-reading {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+
+  .card-meaning {
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+
+  .card-example {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    border-left: 2px solid var(--border);
+    padding-left: 10px;
+  }
+
+  .card-example em {
+    color: var(--accent);
+    font-style: normal;
+    font-weight: 500;
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .btn-sm {
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-sm:hover { border-color: var(--text-dim); color: var(--text); }
+
+  .btn-sm.saved {
+    border-color: var(--green);
+    color: var(--green);
+    background: var(--green-dim);
+  }
+
+  /* Action bar */
+  .action-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: center;
+  }
+
+  .action-bar .count {
+    font-size: 12px;
+    color: var(--text-muted);
+    flex: 1;
+  }
+
+  .btn-outline {
+    padding: 8px 16px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-outline.notion {
+    border-color: var(--border);
+    color: var(--text-muted);
+  }
+
+  .btn-outline.notion:hover {
+    border-color: #fff;
+    color: #fff;
+    background: rgba(255,255,255,0.05);
+  }
+
+  .btn-outline.anki:hover {
+    border-color: var(--yellow);
+    color: var(--yellow);
+  }
+
+  /* Notion config */
+  .notion-config {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 14px;
+    display: none;
+  }
+
+  .notion-config.open { display: block; }
+
+  .notion-config .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .notion-config .help {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .notion-config .help a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  /* Loading */
+  .loading {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 20px 0;
+    justify-content: center;
+  }
+
+  .loading.show { display: flex; }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-size: 13px;
+    color: var(--text);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    transform: translateY(10px);
+    opacity: 0;
+    transition: all 0.2s;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 320px;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success .dot { color: var(--green); }
+  .toast.error .dot { color: var(--red); }
+
+  .empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  .empty-state .big { font-size: 28px; margin-bottom: 10px; }
+
+  /* Source tag */
+  .source-tag {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 700px) {
+    .main { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
+    .results-panel { grid-column: 1; }
+    .settings-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🌿</div>
+  <h1>英語抽出ツール</h1>
+  <span>Instagram → Anki / Notion</span>
+  <div style="margin-left:auto; display:flex; gap:6px; align-items:center;">
+    <span id="cloudSyncIndicator" style="font-size:11px; color:var(--text-dim);"></span>
+    <button class="tab active" id="modeBtnCollect" onclick="switchMode('collect')">📥 収集</button>
+    <button class="tab" id="modeBtnReview" onclick="switchMode('review')">📖 復習</button>
+  </div>
+</header>
+
+<div class="main" id="collectMode">
+
+  <!-- Input panel -->
+  <div class="panel">
+    <div class="panel-header">📥 インプット</div>
+    <div class="panel-body">
+
+      <div class="input-tabs">
+        <button class="tab active" onclick="switchTab('text')">テキスト貼り付け</button>
+        <button class="tab" onclick="switchTab('image')">画像（OCR）</button>
+        <button class="tab" onclick="switchTab('manual')">✏️ 手動で追加</button>
+      </div>
+
+      <div id="textTab">
+        <textarea id="inputText" placeholder="Instagramのキャプションや投稿テキストをここに貼り付け…&#10;&#10;例：&#10;Stop saying "I need to talk to you" — it sounds scary. Instead try these phrases..."></textarea>
+      </div>
+
+      <div id="imageTab" style="display:none;">
+        <div class="image-drop" id="dropZone">
+          <input type="file" accept="image/*" id="imageInput" onchange="handleImage(event)">
+          <div class="icon">📸</div>
+          <div>スクリーンショットをドロップ or クリック</div>
+          <div style="font-size:11px; margin-top:4px;">画像内テキストを自動でOCR</div>
+          <img id="imagePreview">
+        </div>
+      </div>
+
+      <div id="manualTab" style="display:none;">
+        <div class="settings-row" style="grid-template-columns: 1fr 1fr;">
+          <div class="field">
+            <label>単語 / フレーズ *</label>
+            <input type="text" id="manualFront" placeholder="例: could we revisit">
+          </div>
+          <div class="field">
+            <label>タイプ</label>
+            <select id="manualType">
+              <option value="word">単語</option>
+              <option value="phrase">フレーズ</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-row" style="margin-top:10px;">
+          <div class="field">
+            <label>読み・品詞（任意）</label>
+            <input type="text" id="manualReading" placeholder="例: /rɪˈvɪzɪt/ • verb">
+          </div>
+          <div class="field">
+            <label>レベル</label>
+            <select id="manualLevel">
+              <option value="beginner">初級</option>
+              <option value="intermediate" selected>中級</option>
+              <option value="advanced">上級</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>意味（日本語）*</label>
+          <input type="text" id="manualMeaning" placeholder="例: 〜を見直す、再検討する">
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>例文（任意）</label>
+          <input type="text" id="manualExample" placeholder="例: Could we maybe revisit the evaluation criteria?">
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>例文の日本語訳（任意）</label>
+          <input type="text" id="manualExampleJa" placeholder="例: 評価基準を見直させてもらえますか？">
+        </div>
+        <button class="btn btn-primary" onclick="addManualCard()">ストックに追加する</button>
+      </div>
+
+      <div class="extract-level">
+        <button class="toggle-chip on" id="chip-words" onclick="toggleChip('words')">単語</button>
+        <button class="toggle-chip on" id="chip-phrases" onclick="toggleChip('phrases')">フレーズ・イディオム</button>
+        <button class="toggle-chip on" id="chip-examples" onclick="toggleChip('examples')">例文</button>
+      </div>
+
+      <div class="settings-row">
+        <div class="field">
+          <label>ソースラベル（任意）</label>
+          <input type="text" id="sourceLabel" placeholder="例: @learnenglish_reel">
+        </div>
+        <div class="field">
+          <label>難易度フィルター</label>
+          <select id="levelFilter">
+            <option value="all">すべて</option>
+            <option value="intermediate">中級以上</option>
+            <option value="advanced">上級</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="extractBtn" onclick="extract()">
+        AIで抽出する
+      </button>
+
+      <!-- Notion config toggle -->
+      <div style="margin-top: 18px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <button class="btn-sm" onclick="toggleNotionConfig()" id="notionToggleBtn">⚙ Notion設定</button>
+        <span style="font-size:11px; color:var(--text-dim);" id="notionStatus">未設定</span>
+      </div>
+
+      <div class="notion-config" id="notionConfig">
+        <div class="field-row">
+          <div class="field">
+            <label>Notion APIキー</label>
+            <input type="password" id="notionKey" placeholder="secret_..." oninput="saveNotionConfig()">
+          </div>
+          <div class="field">
+            <label>データベースID</label>
+            <input type="text" id="notionDbId" placeholder="32桁のID..." oninput="saveNotionConfig()">
+          </div>
+        </div>
+        <div class="help">
+          APIキー：<a href="https://www.notion.so/my-integrations" target="_blank">notion.so/my-integrations</a>で取得<br>
+          データベースID：NotionページのURLの末尾32桁 / インテグレーションをDBに接続する必要あり
+        </div>
+      </div>
+
+      <!-- Cloud sync (cross-device stock) -->
+      <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+        <button class="btn-sm" onclick="toggleCloudConfig()" id="cloudToggleBtn">☁ クラウド同期設定（PC⇄スマホ共有）</button>
+        <span style="font-size:11px; color:var(--text-dim);" id="cloudStatus">未設定</span>
+      </div>
+
+      <div class="notion-config" id="cloudConfig">
+        <div class="field-row">
+          <div class="field">
+            <label>JSONBin Master Key</label>
+            <input type="password" id="cloudKey" placeholder="$2a$10$..." oninput="saveCloudConfig()">
+          </div>
+          <div class="field">
+            <label>Bin ID</label>
+            <input type="text" id="cloudBinId" placeholder="まだ無ければ右のボタンで作成" oninput="saveCloudConfig()">
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button class="btn-sm" onclick="createCloudBin()">🆕 新規Binを作成</button>
+          <button class="btn-sm" onclick="pullFromCloud()">⬇ クラウドから取得</button>
+          <button class="btn-sm" onclick="pushToCloud(true)">⬆ クラウドへ送信</button>
+        </div>
+        <div class="help">
+          1. <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> で無料登録 → <a href="https://jsonbin.io/api-keys" target="_blank">API Keys</a>ページでMaster Keyをコピーして貼り付け<br>
+          2. 「🆕 新規Binを作成」を押すとBin IDが自動発行されます<br>
+          3. <b>もう片方の端末（スマホ等）にも同じMaster KeyとBin IDを入力</b>すれば同じストックが共有されます
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Preview panel (right side input area) -->
+  <div class="panel">
+    <div class="panel-header">👁 フラッシュカードプレビュー</div>
+    <div class="panel-body" id="previewPanel">
+      <div class="empty-state">
+        <div class="big">✦</div>
+        テキストを入力して抽出すると<br>ここにプレビューが表示されます
+      </div>
+    </div>
+  </div>
+
+  <!-- Results panel full width -->
+  <div class="panel results-panel" id="resultsSection" style="display:none;">
+    <div class="panel-header">
+      📚 抽出結果
+      <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+        <div class="loading" id="loadingBar">
+          <div class="spinner"></div>
+          <span id="loadingMsg">AIが分析中…</span>
+        </div>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="action-bar">
+        <span class="count" id="resultCount"></span>
+        <button class="btn-outline notion" onclick="saveAllToNotion()">📎 Notionに全て保存</button>
+        <button class="btn-outline anki" onclick="exportCSV()">⬇ Anki CSV出力</button>
+        <label class="btn-outline" style="cursor:pointer; display:inline-flex; align-items:center;">
+          ⬆ CSV読み込み
+          <input type="file" accept=".csv,text/csv" onchange="importCSV(event)" style="display:none;">
+        </label>
+        <button class="btn-outline" onclick="clearStock()" style="color:var(--red); border-color:var(--border);">🗑 ストックをクリア</button>
+      </div>
+      <div class="cards-grid" id="cardsGrid"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="main" id="reviewMode" style="display:none; grid-template-columns: 1fr;">
+  <div class="panel" style="max-width: 480px; margin: 0 auto; width: 100%;">
+    <div class="panel-header">
+      📖 復習モード
+      <div style="margin-left:auto; display:flex; align-items:center; gap:10px;">
+        <label style="display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-muted); cursor:pointer; text-transform:none; letter-spacing:normal;">
+          <input type="checkbox" id="shuffleToggle" onchange="toggleShuffle()"> シャッフル
+        </label>
+        <span id="reviewProgress" style="font-size:12px; color:var(--text-muted);"></span>
+      </div>
+    </div>
+    <div class="panel-body" style="padding: 28px 20px;">
+      <div id="reviewEmpty" class="empty-state" style="display:none;">
+        <div class="big">📭</div>
+        まだストックがありません<br>「収集」タブでカードを追加してください
+      </div>
+
+      <div id="reviewCardWrap" style="display:none;">
+        <div id="reviewCard" onclick="flipReview()" style="cursor:pointer; background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:40px 24px; min-height:220px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; transition: border-color 0.15s;">
+          <div id="reviewFrontFace">
+            <div id="reviewTypeTag" style="font-size:10px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:14px;"></div>
+            <div id="reviewFrontText" style="font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:500; color:var(--text); line-height:1.4;"></div>
+            <div id="reviewReadingText" style="font-size:12px; color:var(--text-muted); font-style:italic; margin-top:10px;"></div>
+            <div style="font-size:11px; color:var(--text-dim); margin-top:22px;">タップして裏を見る</div>
+          </div>
+          <div id="reviewBackFace" style="display:none; width:100%;">
+            <div style="font-size:18px; color:var(--text); margin-bottom:14px;" id="reviewMeaningText"></div>
+            <div id="reviewExampleBox" style="font-size:13px; color:var(--text-muted); border-left:2px solid var(--accent); padding-left:12px; text-align:left; line-height:1.6;"></div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:18px;">
+          <button class="btn-outline" onclick="event.stopPropagation(); prevReview()" style="flex:1;">← 戻る</button>
+          <button class="btn btn-primary" onclick="event.stopPropagation(); nextReview()" style="flex:2; margin-top:0;">次へ &gt;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <span class="dot">●</span>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+let extractedCards = [];
+let extractChips = { words: true, phrases: true, examples: true };
+let currentTab = 'text';
+let imageBase64 = null;
+let imageMimeType = 'image/png';
+
+const STOCK_KEY = 'vocab_stock_v1';
+
+function loadStock() {
+  try {
+    const raw = localStorage.getItem(STOCK_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveStock() {
+  try {
+    localStorage.setItem(STOCK_KEY, JSON.stringify(extractedCards));
+  } catch (e) {
+    console.error('Stock save failed', e);
+  }
+  if (isCloudConfigured()) {
+    pushToCloud(false); // fire and forget, non-blocking
+  }
+}
+
+// ---- Cloud sync (JSONBin.io) for cross-device stock sharing ----
+const CLOUD_KEY_STORAGE = 'cloud_jsonbin_key';
+const CLOUD_BIN_STORAGE = 'cloud_jsonbin_id';
+
+function toggleCloudConfig() {
+  document.getElementById('cloudConfig').classList.toggle('open');
+}
+
+function saveCloudConfig() {
+  const key = document.getElementById('cloudKey').value.trim();
+  const binId = document.getElementById('cloudBinId').value.trim();
+  localStorage.setItem(CLOUD_KEY_STORAGE, key);
+  localStorage.setItem(CLOUD_BIN_STORAGE, binId);
+  updateCloudStatus();
+}
+
+function loadCloudConfig() {
+  const key = localStorage.getItem(CLOUD_KEY_STORAGE) || '';
+  const binId = localStorage.getItem(CLOUD_BIN_STORAGE) || '';
+  document.getElementById('cloudKey').value = key;
+  document.getElementById('cloudBinId').value = binId;
+  updateCloudStatus();
+}
+
+function updateCloudStatus() {
+  const key = document.getElementById('cloudKey').value.trim();
+  const binId = document.getElementById('cloudBinId').value.trim();
+  const statusEl = document.getElementById('cloudStatus');
+  const indicatorEl = document.getElementById('cloudSyncIndicator');
+  if (key && binId) {
+    statusEl.textContent = '✓ 設定済み';
+    statusEl.style.color = 'var(--green)';
+    indicatorEl.textContent = '☁ 同期オン';
+    indicatorEl.style.color = 'var(--green)';
+  } else {
+    statusEl.textContent = '未設定';
+    statusEl.style.color = 'var(--text-dim)';
+    indicatorEl.textContent = '';
+  }
+}
+
+function isCloudConfigured() {
+  const key = localStorage.getItem(CLOUD_KEY_STORAGE);
+  const binId = localStorage.getItem(CLOUD_BIN_STORAGE);
+  return !!(key && binId);
+}
+
+async function createCloudBin() {
+  const key = document.getElementById('cloudKey').value.trim();
+  if (!key) { showToast('先にMaster Keyを入力してください', 'error'); return; }
+
+  showToast('新規Binを作成中…', 'success');
+  try {
+    const res = await fetch('https://api.jsonbin.io/v3/b', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': key,
+        'X-Bin-Name': 'english-vocab-stock'
+      },
+      body: JSON.stringify({ items: extractedCards || [] })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+
+    const binId = data.metadata.id;
+    document.getElementById('cloudBinId').value = binId;
+    saveCloudConfig();
+    showToast(`Bin作成完了！ID: ${binId}（もう一方の端末にもこのIDを入力してください）`, 'success');
+  } catch (e) {
+    console.error(e);
+    showToast('Bin作成エラー：' + e.message, 'error');
+  }
+}
+
+async function pullFromCloud(silent) {
+  const key = localStorage.getItem(CLOUD_KEY_STORAGE);
+  const binId = localStorage.getItem(CLOUD_BIN_STORAGE);
+  if (!key || !binId) {
+    if (!silent) showToast('クラウド同期が設定されていません', 'error');
+    return false;
+  }
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+      headers: { 'X-Master-Key': key }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+
+    const remoteItems = (data.record && data.record.items) || [];
+    extractedCards = remoteItems;
+    localStorage.setItem(STOCK_KEY, JSON.stringify(extractedCards)); // local cache only, no re-push
+
+    if (extractedCards.length) {
+      document.getElementById('resultsSection').style.display = '';
+      renderCards(extractedCards);
+      renderPreview(extractedCards[extractedCards.length - 1]);
+    }
+    if (!silent) showToast(`クラウドから${extractedCards.length}件を取得しました`, 'success');
+    return true;
+  } catch (e) {
+    console.error(e);
+    if (!silent) showToast('クラウド取得エラー：' + e.message, 'error');
+    return false;
+  }
+}
+
+async function pushToCloud(manual) {
+  const key = localStorage.getItem(CLOUD_KEY_STORAGE);
+  const binId = localStorage.getItem(CLOUD_BIN_STORAGE);
+  if (!key || !binId) {
+    if (manual) showToast('クラウド同期が設定されていません', 'error');
+    return false;
+  }
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': key
+      },
+      body: JSON.stringify({ items: extractedCards })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`);
+    if (manual) showToast('クラウドに保存しました', 'success');
+    return true;
+  } catch (e) {
+    console.error(e);
+    showToast('クラウド保存エラー：' + e.message, 'error');
+    return false;
+  }
+}
+
+// ---- Tabs ----
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.input-tabs .tab').forEach((t,i) => t.classList.toggle('active', ['text','image','manual'][i] === tab));
+  document.getElementById('textTab').style.display = tab === 'text' ? '' : 'none';
+  document.getElementById('imageTab').style.display = tab === 'image' ? '' : 'none';
+  document.getElementById('manualTab').style.display = tab === 'manual' ? '' : 'none';
+
+  // AI-extraction-only controls are irrelevant in manual mode
+  const aiOnlyEls = [
+    document.querySelector('.extract-level'),
+    document.querySelector('.settings-row'),
+    document.getElementById('extractBtn')
+  ];
+  aiOnlyEls.forEach(el => { if (el) el.style.display = tab === 'manual' ? 'none' : ''; });
+}
+
+// ---- Chips ----
+function toggleChip(key) {
+  extractChips[key] = !extractChips[key];
+  document.getElementById('chip-' + key).classList.toggle('on', extractChips[key]);
+}
+
+// ---- Drag & drop image ----
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) processImageFile(file);
+});
+
+function handleImage(e) {
+  const file = e.target.files[0];
+  if (file) processImageFile(file);
+}
+
+function processImageFile(file) {
+  const reader = new FileReader();
+  imageMimeType = file.type || 'image/png';
+  reader.onload = (e) => {
+    imageBase64 = e.target.result.split(',')[1];
+    const preview = document.getElementById('imagePreview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    dropZone.querySelector('.icon').style.display = 'none';
+    dropZone.querySelectorAll('div:not(#imagePreview)').forEach(d => { if (!d.querySelector('input')) d.style.display = 'none'; });
+  };
+  reader.readAsDataURL(file);
+}
+
+// ---- Notion config ----
+function toggleNotionConfig() {
+  document.getElementById('notionConfig').classList.toggle('open');
+}
+
+function saveNotionConfig() {
+  const key = document.getElementById('notionKey').value;
+  const dbId = document.getElementById('notionDbId').value;
+  if (key && dbId) {
+    localStorage.setItem('notion_key', key);
+    localStorage.setItem('notion_db', dbId);
+    document.getElementById('notionStatus').textContent = '✓ 設定済み';
+    document.getElementById('notionStatus').style.color = 'var(--green)';
+  }
+}
+
+function loadNotionConfig() {
+  const key = localStorage.getItem('notion_key');
+  const dbId = localStorage.getItem('notion_db');
+  if (key) document.getElementById('notionKey').value = key;
+  if (dbId) document.getElementById('notionDbId').value = dbId;
+  if (key && dbId) {
+    document.getElementById('notionStatus').textContent = '✓ 設定済み';
+    document.getElementById('notionStatus').style.color = 'var(--green)';
+  }
+}
+
+function addManualCard() {
+  const front = document.getElementById('manualFront').value.trim();
+  const meaning = document.getElementById('manualMeaning').value.trim();
+
+  if (!front || !meaning) {
+    showToast('単語/フレーズと意味は必須です', 'error');
+    return;
+  }
+
+  const card = {
+    id: newId(),
+    type: document.getElementById('manualType').value,
+    front: front,
+    reading: document.getElementById('manualReading').value.trim(),
+    meaning_ja: meaning,
+    example: document.getElementById('manualExample').value.trim(),
+    example_ja: document.getElementById('manualExampleJa').value.trim(),
+    highlight: front,
+    level: document.getElementById('manualLevel').value,
+    source: '手動追加',
+    saved: false,
+    addedAt: Date.now()
+  };
+
+  extractedCards.push(card);
+  saveStock();
+
+  document.getElementById('resultsSection').style.display = '';
+  renderCards(extractedCards);
+  renderPreview(card);
+
+  // Clear form
+  ['manualFront','manualReading','manualMeaning','manualExample','manualExampleJa'].forEach(id => document.getElementById(id).value = '');
+
+  showToast(`「${front}」をストックに追加しました（累計${extractedCards.length}件）`, 'success');
+}
+async function extract() {
+  const text = document.getElementById('inputText').value.trim();
+  const label = document.getElementById('sourceLabel').value.trim();
+  const level = document.getElementById('levelFilter').value;
+
+  if (currentTab === 'text' && !text) { showToast('テキストを入力してください', 'error'); return; }
+  if (currentTab === 'image' && !imageBase64) { showToast('画像を選択してください', 'error'); return; }
+
+  const btn = document.getElementById('extractBtn');
+  btn.disabled = true;
+  btn.textContent = '分析中…';
+
+  document.getElementById('resultsSection').style.display = '';
+  document.getElementById('loadingBar').classList.add('show');
+  document.getElementById('previewPanel').innerHTML = '<div class="loading show"><div class="spinner"></div><span>AIが分析中…</span></div>';
+
+  const extractTypes = [];
+  if (extractChips.words) extractTypes.push('単語 (word)');
+  if (extractChips.phrases) extractTypes.push('フレーズ・イディオム (phrase)');
+
+  let userContent;
+  if (currentTab === 'image' && imageBase64) {
+    userContent = [
+      { type: 'image', source: { type: 'base64', media_type: imageMimeType, data: imageBase64 } },
+      { type: 'text', text: buildPrompt(null, extractTypes, level, label) }
+    ];
+  } else {
+    userContent = buildPrompt(text, extractTypes, level, label);
+  }
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: `You are an English vocabulary extraction expert for Japanese learners. Extract vocabulary and phrases from the given text/image and return ONLY valid JSON, no markdown, no explanation.
+
+IMPORTANT — many Instagram posts show subtitle-style overlays with an English sentence on top and its Japanese translation directly below (e.g. white bold text with black outline over a photo/video background). When you see this pattern:
+- Treat the English line as the target sentence and the Japanese line below it as its official translation — use that exact Japanese translation for "example_ja" rather than writing your own.
+- Extract the single most useful phrase/idiom from that English sentence (often the whole sentence is one useful business/social phrase, e.g. a soft request, hedge, or polite expression) as well as any individual notable words.
+- Ignore decorative background content (photos, logos, watermarks, usernames) — only extract from the overlaid caption text.
+- If the image is noisy or text is partially unclear, still extract what is legible rather than returning nothing.
+
+Return format:
+{
+  "items": [
+    {
+      "type": "word" | "phrase",
+      "front": "the English word or phrase",
+      "reading": "pronunciation hint or part of speech e.g. /ˈwɜːrd/ • verb",
+      "meaning_ja": "日本語の意味（簡潔に）",
+      "example": "original sentence from the text using this word/phrase",
+      "example_ja": "例文の日本語訳（画像内に日本語訳がある場合はそれをそのまま使う）",
+      "highlight": "the exact word/phrase to highlight in example",
+      "level": "beginner|intermediate|advanced"
+    }
+  ]
+}`,
+        messages: [{ role: 'user', content: userContent }]
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+      throw new Error(data.error.message || JSON.stringify(data.error));
+    }
+    if (!data.content) {
+      throw new Error('APIから予期しない応答: ' + JSON.stringify(data).slice(0, 200));
+    }
+
+    const raw = data.content?.find(b => b.type === 'text')?.text || '{"items":[]}';
+    const clean = raw.replace(/```json|```/g, '').trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(clean);
+    } catch (parseErr) {
+      throw new Error('AIの応答をJSONとして解析できませんでした: ' + clean.slice(0, 150));
+    }
+
+    if (!parsed.items || !parsed.items.length) {
+      showToast('テキストや画像から抽出できる項目が見つかりませんでした', 'error');
+      document.getElementById('previewPanel').innerHTML = '<div class="empty-state"><div class="big">🔍</div>抽出できる単語・フレーズが<br>見つかりませんでした</div>';
+      btn.disabled = false;
+      btn.textContent = 'AIで抽出する';
+      document.getElementById('loadingBar').classList.remove('show');
+      return;
+    }
+
+    if (!parsed.items || !parsed.items.length) {
+      showToast('テキストや画像から抽出できる項目が見つかりませんでした', 'error');
+      document.getElementById('previewPanel').innerHTML = '<div class="empty-state"><div class="big">🔍</div>抽出できる単語・フレーズが<br>見つかりませんでした</div>';
+      btn.disabled = false;
+      btn.textContent = 'AIで抽出する';
+      document.getElementById('loadingBar').classList.remove('show');
+      return;
+    }
+
+    const newCards = parsed.items.map((item) => ({ ...item, id: newId(), saved: false, source: label, addedAt: Date.now() }));
+
+    // Filter by level before adding to stock
+    let toAdd = newCards;
+    if (level === 'intermediate') toAdd = newCards.filter(c => c.level !== 'beginner');
+    if (level === 'advanced') toAdd = newCards.filter(c => c.level === 'advanced');
+
+    extractedCards = extractedCards.concat(toAdd);
+    saveStock();
+
+    renderCards(extractedCards);
+    renderPreview(toAdd[0] || extractedCards[extractedCards.length - 1]);
+    showToast(`${toAdd.length}件をストックに追加しました（累計${extractedCards.length}件）`, 'success');
+
+  } catch (err) {
+    console.error(err);
+    showToast('抽出エラー：' + err.message, 'error');
+    document.getElementById('previewPanel').innerHTML = `<div class="empty-state"><div class="big">⚠</div>エラーが発生しました<br><span style="font-size:11px; word-break:break-all;">${err.message}</span></div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'AIで抽出する';
+  document.getElementById('loadingBar').classList.remove('show');
+}
+
+function buildPrompt(text, extractTypes, level, label) {
+  return `Extract ${extractTypes.join(' and ')} from the following English content.
+${level !== 'all' ? `Focus on ${level} level vocabulary.` : ''}
+${label ? `Source: ${label}` : ''}
+${text ? `\nContent:\n${text}` : '\n(Extract from the image above)'}`;
+}
+
+// ---- Render ----
+function renderCards(cards) {
+  const grid = document.getElementById('cardsGrid');
+  const count = document.getElementById('resultCount');
+
+  if (!cards.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="big">🔍</div>抽出できる単語・フレーズが見つかりませんでした</div>';
+    count.textContent = '';
+    document.getElementById('previewPanel').innerHTML = '<div class="empty-state"><div class="big">🔍</div>結果なし</div>';
+    return;
+  }
+
+  count.textContent = `累計 ${cards.length}件`;
+
+  const ordered = [...cards].reverse();
+
+  const html = ordered.map(c => {
+    const ex = c.example ? c.example.replace(
+      new RegExp(`(${escapeRegex(c.highlight || c.front)})`, 'gi'),
+      '<em>$1</em>'
+    ) : '';
+    return `
+    <div class="card" id="card-${c.id}">
+      <div class="card-type ${c.type}">${c.type === 'word' ? '単語' : 'フレーズ'}</div>
+      <div class="card-front">${c.front}</div>
+      ${c.reading ? `<div class="card-reading">${c.reading}</div>` : ''}
+      <div class="card-meaning">${c.meaning_ja}</div>
+      ${ex ? `<div class="card-example">${ex}<br><span style="color:var(--text-dim);font-size:11px;margin-top:4px;display:block;">${c.example_ja || ''}</span></div>` : ''}
+      ${c.source ? `<div class="source-tag">📸 ${c.source}</div>` : ''}
+      <div class="card-actions">
+        <button class="btn-sm ${c.saved ? 'saved' : ''}" onclick="saveOneToNotion('${c.id}')" id="notion-${c.id}">${c.saved ? '✓ 保存済み' : '📎 Notion'}</button>
+        <button class="btn-sm" onclick="copyCard('${c.id}')">コピー</button>
+        <button class="btn-sm" onclick="deleteCard('${c.id}')" style="margin-left:auto; color:var(--red); border-color:transparent;">削除</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.innerHTML = html;
+}
+
+function renderPreview(card) {
+  if (!card) return;
+  document.getElementById('previewPanel').innerHTML = `
+    <div style="text-align:center; padding: 16px 0;">
+      <div style="font-size:11px; color:var(--text-dim); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:16px;">Ankiカードイメージ（表）</div>
+      <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:28px 24px; margin-bottom:12px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:500; color:var(--text); margin-bottom:8px;">${card.front}</div>
+        ${card.reading ? `<div style="font-size:12px; color:var(--text-muted); font-style:italic;">${card.reading}</div>` : ''}
+      </div>
+      <div style="font-size:11px; color:var(--text-dim); margin-bottom:6px;">▼ 裏面</div>
+      <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:20px 24px;">
+        <div style="font-size:16px; color:var(--text); margin-bottom:10px;">${card.meaning_ja}</div>
+        ${card.example ? `<div style="font-size:12px; color:var(--text-muted); border-left:2px solid var(--accent); padding-left:10px; text-align:left;">${card.example}<br><span style="font-size:11px;color:var(--text-dim);">${card.example_ja || ''}</span></div>` : ''}
+      </div>
+      <div style="margin-top:14px; font-size:11px; color:var(--text-dim);">← 左右スワイプで記憶度評価（Anki方式）</div>
+    </div>`;
+}
+
+// ---- Notion ----
+async function saveOneToNotion(id) {
+  const card = extractedCards.find(c => c.id === id);
+  if (!card) return;
+  const btn = document.getElementById(`notion-${id}`);
+  btn.textContent = '保存中…';
+  const ok = await pushToNotion([card]);
+  if (ok) {
+    card.saved = true;
+    saveStock();
+    btn.textContent = '✓ 保存済み';
+    btn.classList.add('saved');
+  } else {
+    btn.textContent = '📎 Notion';
+  }
+}
+
+function importCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      let text = e.target.result;
+      // Strip BOM if present
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+      const lines = text.split(/\r?\n/).filter(l => l.trim().length);
+      if (!lines.length) { showToast('CSVが空です', 'error'); return; }
+
+      // Detect delimiter: our export uses tabs
+      const delimiter = lines[0].includes('\t') ? '\t' : ',';
+
+      // Skip header row if it looks like our export header
+      let dataLines = lines;
+      if (lines[0].includes('表（英語）') || lines[0].toLowerCase().includes('front')) {
+        dataLines = lines.slice(1);
+      }
+
+      const existingFronts = new Set(extractedCards.map(c => c.front.trim().toLowerCase()));
+      let added = 0, skipped = 0;
+
+      dataLines.forEach(line => {
+        const cols = line.split(delimiter);
+        const front = (cols[0] || '').trim();
+        if (!front) return;
+
+        if (existingFronts.has(front.toLowerCase())) { skipped++; return; }
+
+        const meaning = (cols[1] || '').trim();
+        const example = (cols[2] || '').trim();
+        const exampleJa = (cols[3] || '').trim();
+        const reading = (cols[4] || '').trim();
+        const tag = (cols[5] || '').trim();
+
+        const type = tag.includes('phrase') ? 'phrase' : 'word';
+        const level = tag.includes('advanced') ? 'advanced' : tag.includes('beginner') ? 'beginner' : 'intermediate';
+
+        extractedCards.push({
+          id: newId(),
+          type, front, reading,
+          meaning_ja: meaning || '(意味未設定)',
+          example, example_ja: exampleJa,
+          highlight: front, level,
+          source: 'CSVインポート',
+          saved: false,
+          addedAt: Date.now()
+        });
+        existingFronts.add(front.toLowerCase());
+        added++;
+      });
+
+      saveStock();
+      document.getElementById('resultsSection').style.display = '';
+      renderCards(extractedCards);
+      if (extractedCards.length) renderPreview(extractedCards[extractedCards.length - 1]);
+
+      showToast(`${added}件を追加しました${skipped ? `（重複${skipped}件はスキップ）` : ''}`, 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('CSVの読み込みに失敗しました：' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+  event.target.value = ''; // allow re-selecting the same file later
+}
+
+function deleteCard(id) {
+  extractedCards = extractedCards.filter(c => c.id !== id);
+  saveStock();
+  renderCards(extractedCards);
+  if (!extractedCards.length) {
+    document.getElementById('resultsSection').style.display = 'none';
+  }
+  showToast('削除しました', 'success');
+}
+
+function clearStock() {
+  if (!extractedCards.length) return;
+  if (!confirm(`ストック${extractedCards.length}件を全て削除しますか？この操作は元に戻せません。`)) return;
+  extractedCards = [];
+  saveStock();
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('previewPanel').innerHTML = '<div class="empty-state"><div class="big">✦</div>テキストを入力して抽出すると<br>ここにプレビューが表示されます</div>';
+  showToast('ストックをクリアしました', 'success');
+}
+
+async function saveAllToNotion() {
+  const unsaved = extractedCards.filter(c => !c.saved);
+  if (!unsaved.length) { showToast('すべて保存済みです', 'success'); return; }
+  showToast(`${unsaved.length}件をNotionに保存中…`, 'success');
+  const ok = await pushToNotion(unsaved);
+  if (ok) {
+    unsaved.forEach(c => {
+      c.saved = true;
+      const btn = document.getElementById(`notion-${c.id}`);
+      if (btn) { btn.textContent = '✓ 保存済み'; btn.classList.add('saved'); }
+    });
+    saveStock();
+    showToast(`${unsaved.length}件をNotionに保存しました`, 'success');
+  }
+}
+
+async function pushToNotion(cards) {
+  const key = document.getElementById('notionKey').value;
+  const dbId = document.getElementById('notionDbId').value;
+  if (!key || !dbId) {
+    showToast('Notion APIキーとデータベースIDを設定してください', 'error');
+    document.getElementById('notionConfig').classList.add('open');
+    return false;
+  }
+
+  try {
+    // Use Claude API to call Notion API (since we can't call Notion directly from browser due to CORS)
+    // We'll call through the Anthropic API with a tool-use workaround
+    // Instead: batch save via proxy approach - generate the curl commands and show them
+    // Actually let's try direct Notion API first
+
+    let allOk = true;
+    for (const card of cards) {
+      const body = {
+        parent: { database_id: dbId.replace(/-/g,'') },
+        properties: {
+          "Name": { title: [{ text: { content: card.front } }] },
+          "意味": { rich_text: [{ text: { content: card.meaning_ja } }] },
+          "例文": { rich_text: [{ text: { content: card.example || '' } }] },
+          "例文（日本語）": { rich_text: [{ text: { content: card.example_ja || '' } }] },
+          "タイプ": { select: { name: card.type === 'word' ? '単語' : 'フレーズ' } },
+          "レベル": { select: { name: card.level || 'intermediate' } },
+          "ソース": { rich_text: [{ text: { content: card.source || '' } }] },
+          "読み・品詞": { rich_text: [{ text: { content: card.reading || '' } }] }
+        }
+      };
+
+      const res = await fetch('https://api.notion.com/v1/pages', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${key}`,
+          'Content-Type': 'application/json',
+          'Notion-Version': '2022-06-28'
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        console.error('Notion error:', err);
+        // CORS issue likely — show instructions
+        if (res.status === 0 || err.status === 0) {
+          showNotionCorsHelp(cards);
+          return false;
+        }
+        allOk = false;
+      }
+    }
+    return allOk;
+  } catch (e) {
+    console.error(e);
+    showNotionCorsHelp(cards);
+    return false;
+  }
+}
+
+function showNotionCorsHelp(cards) {
+  // Notion API doesn't support CORS from browser — show CSV + instructions
+  const csv = generateCSV(cards);
+  showToast('NotionはブラウザからのCORS制限があります。CSVでエクスポートします', 'error');
+  downloadFile(csv, 'notion_import.csv', 'text/csv');
+}
+
+// ---- Anki CSV ----
+function exportCSV() {
+  if (!extractedCards.length) { showToast('先に抽出してください', 'error'); return; }
+  const csv = generateCSV(extractedCards);
+  downloadFile(csv, 'anki_cards.csv', 'text/csv');
+  showToast('CSVをダウンロードしました。Ankiでインポートできます', 'success');
+}
+
+function generateCSV(cards) {
+  const header = '表（英語）\t裏（意味）\t例文\t例文（日本語）\t読み・品詞\tタグ';
+  const rows = cards.map(c => {
+    const tag = [c.type, c.level, c.source ? c.source.replace('@','') : ''].filter(Boolean).join(' ');
+    return [c.front, c.meaning_ja, c.example || '', c.example_ja || '', c.reading || '', tag]
+      .map(v => v.replace(/\t/g,' ').replace(/\n/g,' '))
+      .join('\t');
+  });
+  return [header, ...rows].join('\n');
+}
+
+function utf8ToBase64(str) {
+  // Properly base64-encode a UTF-8 string (handles Japanese characters)
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+function downloadFile(content, filename, type) {
+  const bom = type.includes('csv') ? '\uFEFF' : '';
+  const full = bom + content;
+
+  try {
+    const base64 = utf8ToBase64(full);
+    const dataUri = 'data:' + type + ';charset=utf-8;base64,' + base64;
+    const a = document.createElement('a');
+    a.href = dataUri;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    return;
+  } catch (e) {
+    console.error('Base64 download failed, falling back to Blob', e);
+  }
+
+  // Fallback: Blob URL (works in most desktop browsers, may fail on file:// in some WebViews)
+  try {
+    const blob = new Blob([full], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e2) {
+    console.error('Blob download also failed', e2);
+    showToast('ダウンロードに失敗しました。別のブラウザでお試しください', 'error');
+  }
+}
+
+// ---- Copy ----
+function copyCard(id) {
+  const card = extractedCards.find(c => c.id === id);
+  if (!card) return;
+  const text = `${card.front}\n${card.meaning_ja}\n${card.example || ''}\n${card.example_ja || ''}`;
+  navigator.clipboard.writeText(text).then(() => showToast('コピーしました', 'success'));
+}
+
+// ---- Toast ----
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.className = `toast show ${type}`;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ---- Utils ----
+function escapeRegex(s) {
+  return s ? s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
+}
+
+// ---- Mode switching ----
+let currentMode = 'collect';
+function switchMode(mode) {
+  currentMode = mode;
+  document.getElementById('collectMode').style.display = mode === 'collect' ? '' : 'none';
+  document.getElementById('reviewMode').style.display = mode === 'review' ? '' : 'none';
+  document.getElementById('modeBtnCollect').classList.toggle('active', mode === 'collect');
+  document.getElementById('modeBtnReview').classList.toggle('active', mode === 'review');
+  if (mode === 'review') initReview();
+}
+
+// ---- Review mode ----
+let reviewOrder = [];
+let reviewPos = 0;
+let reviewFlipped = false;
+let reviewShuffle = false;
+
+function toggleShuffle() {
+  reviewShuffle = document.getElementById('shuffleToggle').checked;
+  buildReviewOrder();
+  reviewPos = 0;
+  reviewFlipped = false;
+  renderReviewCard();
+}
+
+function buildReviewOrder() {
+  reviewOrder = extractedCards.map((_, i) => i);
+  if (reviewShuffle) {
+    for (let i = reviewOrder.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [reviewOrder[i], reviewOrder[j]] = [reviewOrder[j], reviewOrder[i]];
+    }
+  }
+}
+
+function initReview() {
+  if (!extractedCards.length) {
+    document.getElementById('reviewEmpty').style.display = '';
+    document.getElementById('reviewCardWrap').style.display = 'none';
+    document.getElementById('reviewProgress').textContent = '';
+    return;
+  }
+  document.getElementById('reviewEmpty').style.display = 'none';
+  document.getElementById('reviewCardWrap').style.display = '';
+  buildReviewOrder();
+  reviewPos = 0;
+  reviewFlipped = false;
+  renderReviewCard();
+}
+
+function renderReviewCard() {
+  if (!reviewOrder.length) return;
+  const card = extractedCards[reviewOrder[reviewPos]];
+  if (!card) return;
+
+  document.getElementById('reviewTypeTag').textContent = card.type === 'word' ? '単語' : 'フレーズ';
+  document.getElementById('reviewTypeTag').style.color = card.type === 'word' ? 'var(--accent)' : 'var(--yellow)';
+  document.getElementById('reviewFrontText').textContent = card.front;
+  document.getElementById('reviewReadingText').textContent = card.reading || '';
+  document.getElementById('reviewMeaningText').textContent = card.meaning_ja || '';
+
+  const ex = card.example ? card.example.replace(
+    new RegExp(`(${escapeRegex(card.highlight || card.front)})`, 'gi'),
+    '<em style="color:var(--accent); font-style:normal; font-weight:500;">$1</em>'
+  ) : '';
+  document.getElementById('reviewExampleBox').innerHTML = ex
+    ? `${ex}<br><span style="font-size:11px; color:var(--text-dim); margin-top:6px; display:block;">${card.example_ja || ''}</span>`
+    : '';
+
+  document.getElementById('reviewFrontFace').style.display = reviewFlipped ? 'none' : '';
+  document.getElementById('reviewBackFace').style.display = reviewFlipped ? '' : 'none';
+
+  document.getElementById('reviewProgress').textContent = `${reviewPos + 1} / ${reviewOrder.length}`;
+}
+
+function flipReview() {
+  reviewFlipped = !reviewFlipped;
+  renderReviewCard();
+}
+
+function nextReview() {
+  if (!reviewOrder.length) return;
+  reviewPos = (reviewPos + 1) % reviewOrder.length;
+  reviewFlipped = false;
+  renderReviewCard();
+}
+
+function prevReview() {
+  if (!reviewOrder.length) return;
+  reviewPos = (reviewPos - 1 + reviewOrder.length) % reviewOrder.length;
+  reviewFlipped = false;
+  renderReviewCard();
+}
+
+// Init
+loadNotionConfig();
+loadCloudConfig();
+
+extractedCards = loadStock();
+if (extractedCards.length) {
+  document.getElementById('resultsSection').style.display = '';
+  renderCards(extractedCards);
+  renderPreview(extractedCards[extractedCards.length - 1]);
+}
+
+// If cloud sync is configured, pull the latest shared stock on load (overwrites local cache)
+if (isCloudConfigured()) {
+  pullFromCloud(true);
+}
+</script>
+</body>
+</html>
