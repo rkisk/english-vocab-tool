@@ -607,7 +607,7 @@
         <button class="toggle-chip on" id="chip-examples" onclick="toggleChip('examples')">例文</button>
       </div>
 
-      <div class="settings-row">
+      <div class="settings-row" id="aiSettingsRow">
         <div class="field">
           <label>ソースラベル（任意）</label>
           <input type="text" id="sourceLabel" placeholder="例: @learnenglish_reel">
@@ -966,7 +966,7 @@ function switchTab(tab) {
   // AI-extraction-only controls are irrelevant in manual mode
   const aiOnlyEls = [
     document.querySelector('.extract-level'),
-    document.querySelector('.settings-row'),
+    document.getElementById('aiSettingsRow'),
     document.getElementById('extractBtn')
   ];
   aiOnlyEls.forEach(el => { if (el) el.style.display = tab === 'manual' ? 'none' : ''; });
